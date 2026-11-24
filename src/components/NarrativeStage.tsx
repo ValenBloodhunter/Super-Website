@@ -1,312 +1,151 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, type ReactNode, type RefObject } from 'react';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
+import { CHAPTERS } from '../data/portfolio';
+import { ArrowDownIcon, ArrowUpRightIcon } from './Icons';
 
 interface NarrativeStageProps {
-  activeChapterId: string;
-  isSilence: boolean;
+  trackRef: RefObject<HTMLDivElement | null>;
+  progressRef: RefObject<number>;
   reducedMotion: boolean;
-  onProgressChange: (progress: number) => void;
-  onOpenOverlay: (triggerEl: HTMLElement | null) => void;
+  onJump: (progress: number) => void;
+  children: ReactNode;
 }
 
-const DESIGN_SPECS = [
-  { code: '01', label: 'BIOLOGICAL FORM' },
-  { code: '02', label: 'SYNTHETIC INTELLIGENCE' },
-  { code: '03', label: 'ORGANIC EVOLUTION' },
-];
+const INTRO_COPY = 'I build software across applied AI, machine learning, and the web.';
 
-export function NarrativeStage({
-  activeChapterId,
-  isSilence,
-  reducedMotion,
-  onProgressChange,
-  onOpenOverlay,
-}: NarrativeStageProps) {
-  const trackRef = useRef<HTMLDivElement | null>(null);
+export function NarrativeStage({ trackRef, progressRef, reducedMotion, onJump, children }: NarrativeStageProps) {
+  const [current, setCurrent] = useState<number | null>(0);
 
   useEffect(() => {
     const track = trackRef.current;
-    if (!track) return;
+    if (!track || reducedMotion) return;
+
+    const updateProgress = ({ progress }: { progress: number }) => {
+      progressRef.current = progress;
+      const nextChapter = CHAPTERS.findIndex((chapter) => progress < chapter.startProgress);
+      setCurrent(progress >= 0.43 && progress < 0.502
+        ? null
+        : nextChapter === -1 ? CHAPTERS.length - 1 : nextChapter - 1);
+    };
 
     const ctx = gsap.context(() => {
-      const ch1Lines = gsap.utils.toArray<HTMLElement>('.ch1-line');
-      const ch1Meta = gsap.utils.toArray<HTMLElement>('.ch1-meta');
-      const ch2Lines = gsap.utils.toArray<HTMLElement>('.ch2-line');
-      const ch2Meta = gsap.utils.toArray<HTMLElement>('.ch2-meta');
-      const ch2Rules = gsap.utils.toArray<HTMLElement>('.callout-rule');
-      const ch3Lines = gsap.utils.toArray<HTMLElement>('.ch3-line');
-      const ch3Meta = gsap.utils.toArray<HTMLElement>('.ch3-meta');
-      const ch4Lines = gsap.utils.toArray<HTMLElement>('.ch4-line');
-      const ch4Meta = gsap.utils.toArray<HTMLElement>('.ch4-meta');
-      const ch4Dividers = gsap.utils.toArray<HTMLElement>('.spec-divider, .spec-divider-top');
-      const ch5Lines = gsap.utils.toArray<HTMLElement>('.ch5-line');
-      const ch5Meta = gsap.utils.toArray<HTMLElement>('.ch5-meta');
-
-      const yShift = reducedMotion ? 0 : 108;
-
-      // Initial state: Chapter 01 open, chapters 02-05 cleanly hidden
-      gsap.set('.layer-ch1', { autoAlpha: 1 });
-      gsap.set(['.layer-ch2', '.layer-ch3', '.layer-ch4', '.layer-ch5'], { autoAlpha: 0 });
-      gsap.set([ch2Lines, ch3Lines, ch4Lines, ch5Lines], { yPercent: yShift, opacity: 0 });
-      gsap.set([ch2Meta, ch3Meta, ch4Meta, ch5Meta], { opacity: 0, y: reducedMotion ? 0 : 12 });
-      gsap.set([ch2Rules, ch4Dividers], { scaleX: 0 });
-
-      const tl = gsap.timeline({
+      const timeline = gsap.timeline({
         defaults: { ease: 'none' },
         scrollTrigger: {
           trigger: track,
           start: 'top top',
-          end: 'bottom bottom',
-          scrub: reducedMotion ? false : 0.35,
-          onUpdate: (self) => {
-            onProgressChange(self.progress);
-          },
+          end: () => track.clientHeight - (track.firstElementChild?.clientHeight ?? window.innerHeight),
+          scrub: 0.35,
+          onUpdate: updateProgress,
+          onRefresh: updateProgress,
         },
       });
 
-      // Normalize 1.0 timeline duration so every keyframe corresponds directly to scrollProgress [0..1]
-      tl.to({}, { duration: 1.0 }, 0);
+      // Keep chapter transitions aligned with the camera sequence, including the pause before the eye reveal.
+      timeline.to({}, { duration: 1 }, 0);
+      CHAPTERS.forEach((chapter, index) => {
+        const layer = track.querySelector<HTMLElement>(`[data-chapter="${index}"]`);
+        if (!layer) return;
 
-      // --- CHAPTER 01: 0.00 -> 0.21 ---
-      tl.to(ch1Lines, { yPercent: -yShift, opacity: 0, stagger: 0.012, duration: 0.055 }, 0.145);
-      tl.to(ch1Meta, { opacity: 0, y: reducedMotion ? 0 : -10, duration: 0.045 }, 0.145);
-      tl.to('.scroll-cue', { opacity: 0, duration: 0.04 }, 0.10);
-      tl.set('.layer-ch1', { autoAlpha: 0 }, 0.21);
+        const lines = layer.querySelectorAll('.line-inner');
+        const meta = layer.querySelectorAll('.chapter-meta');
+        if (index > 0) {
+          gsap.set(layer, { autoAlpha: 0 });
+          gsap.set(lines, { opacity: 0, yPercent: 108 });
+          gsap.set(meta, { opacity: 0, y: 12 });
+          timeline.set(layer, { autoAlpha: 1 }, chapter.startProgress);
+          timeline.to(lines, {
+            yPercent: 0, opacity: 1, stagger: 0.012, duration: 0.055, ease: 'power2.out',
+          }, chapter.startProgress + 0.01);
+          timeline.to(meta, {
+            y: 0, opacity: 1, duration: 0.05, ease: 'power2.out',
+          }, chapter.startProgress + 0.025);
+        }
 
-      // --- CHAPTER 02: 0.21 -> 0.43 ---
-      tl.set('.layer-ch2', { autoAlpha: 1 }, 0.205);
-      tl.to(ch2Lines, { yPercent: 0, opacity: 1, stagger: 0.014, duration: 0.065, ease: 'power2.out' }, 0.215);
-      tl.to(ch2Meta, { opacity: 1, y: 0, duration: 0.05, ease: 'power2.out' }, 0.235);
-      tl.to(ch2Rules, { scaleX: 1, stagger: 0.015, duration: 0.05, ease: 'power2.out' }, 0.25);
-
-      // Exit Chapter 02 cleanly into Visual Silence (0.43 -> 0.50)
-      tl.to(ch2Lines, { yPercent: -yShift, opacity: 0, stagger: 0.01, duration: 0.05, ease: 'power2.in' }, 0.38);
-      tl.to(ch2Meta, { opacity: 0, y: reducedMotion ? 0 : -10, duration: 0.04 }, 0.38);
-      tl.to(ch2Rules, { scaleX: 0, duration: 0.035 }, 0.385);
-      tl.set('.layer-ch2', { autoAlpha: 0 }, 0.435);
-
-      // --- CHAPTER 03: AWAKENING (0.502 -> 0.655, synced to F51-F59) ---
-      tl.set('.layer-ch3', { autoAlpha: 1 }, 0.502);
-      tl.to('.ch3-status', { opacity: 1, y: 0, duration: 0.025, ease: 'power2.out' }, 0.505);
-      tl.to(ch3Lines, { yPercent: 0, opacity: 1, stagger: 0.01, duration: 0.036, ease: 'power2.out' }, 0.508);
-      tl.to('.ch3-body', { opacity: 1, y: 0, duration: 0.032, ease: 'power2.out' }, 0.522);
-
-      tl.to(ch3Lines, { yPercent: -yShift, opacity: 0, stagger: 0.01, duration: 0.048, ease: 'power2.in' }, 0.612);
-      tl.to(ch3Meta, { opacity: 0, y: reducedMotion ? 0 : -10, duration: 0.04 }, 0.612);
-      tl.set('.layer-ch3', { autoAlpha: 0 }, 0.66);
-
-      // --- CHAPTER 04: PRECISION (0.66 -> 0.855) ---
-      tl.set('.layer-ch4', { autoAlpha: 1 }, 0.658);
-      tl.to(ch4Lines, { yPercent: 0, opacity: 1, stagger: 0.012, duration: 0.05, ease: 'power2.out' }, 0.665);
-      tl.to(ch4Meta, { opacity: 1, y: 0, stagger: 0.01, duration: 0.045, ease: 'power2.out' }, 0.682);
-      tl.to(ch4Dividers, { scaleX: 1, stagger: 0.008, duration: 0.042, ease: 'power2.out' }, 0.685);
-
-      tl.to(ch4Lines, { yPercent: -yShift, opacity: 0, stagger: 0.01, duration: 0.045, ease: 'power2.in' }, 0.805);
-      tl.to(ch4Meta, { opacity: 0, y: reducedMotion ? 0 : -10, duration: 0.04 }, 0.805);
-      tl.to(ch4Dividers, { scaleX: 0, duration: 0.035 }, 0.81);
-      tl.set('.layer-ch4', { autoAlpha: 0 }, 0.855);
-
-      // --- CHAPTER 05: TRANSCENDENCE (0.855 -> 1.00) ---
-      tl.set('.layer-ch5', { autoAlpha: 1 }, 0.855);
-      tl.to(ch5Lines, { yPercent: 0, opacity: 1, stagger: 0.016, duration: 0.065, ease: 'power2.out' }, 0.862);
-      tl.to(ch5Meta, { opacity: 1, y: 0, stagger: 0.014, duration: 0.05, ease: 'power2.out' }, 0.89);
+        const next = CHAPTERS[index + 1];
+        if (next) {
+          const end = index === 1 ? 0.435 : next.startProgress;
+          timeline.to(lines, { opacity: 0, yPercent: -108, stagger: 0.01, duration: 0.045 }, end - 0.065);
+          timeline.to(meta, { opacity: 0, y: -10, duration: 0.04 }, end - 0.065);
+          timeline.set(layer, { autoAlpha: 0 }, end);
+        }
+      });
     }, track);
 
-    return () => {
-      ctx.revert();
-    };
-  }, [onProgressChange, reducedMotion]);
+    return () => ctx.revert();
+  }, [progressRef, reducedMotion, trackRef]);
 
   return (
-    <main id="main-content">
-      <div ref={trackRef} className="scroll-story-track">
-        <div className="pinned-narrative-stage">
-          <div className="scrim-top" aria-hidden="true" />
-          <div className="scrim-left" aria-hidden="true" />
-          <div className="scrim-bottom" aria-hidden="true" />
+    <div ref={trackRef} id="top" className="scroll-story-track" data-reduced-motion={reducedMotion}>
+      <div className="pinned-narrative-stage">
+        <img
+          className="cinematic-poster"
+          src={`${import.meta.env.BASE_URL}frames/poster.webp`}
+          alt=""
+          fetchPriority="high"
+        />
+        {children}
+        <div className="cinematic-scrim" aria-hidden="true" />
 
-          {/* CHAPTER 01 — SOVEREIGN */}
-          <section
-            className="chapter-layer layer-ch1"
-            aria-label="Chapter 01: Sovereign"
-            data-active={!isSilence && activeChapterId === 'chapter-sovereign' ? 'true' : 'false'}
-          >
-            <div className="ch1-block">
-              <span className="chapter-tag ch1-meta">01 / THE ORIGIN</span>
-              <h1 className="display-primary">
-                <span className="line-mask">
-                  <span className="line-inner ch1-line">Relentless.</span>
-                </span>
-                <span className="line-mask">
-                  <span className="line-inner ch1-line">Sovereign.</span>
-                </span>
-                <span className="line-mask">
-                  <span className="line-inner ch1-line">Unyielding.</span>
-                </span>
-              </h1>
-              <p className="editorial-body ch1-meta">
-                Born beyond the boundaries of biology.
-              </p>
+        <section className="chapter-layer layer-intro" data-chapter={0} inert={!reducedMotion && current !== 0}>
+          <div className="chapter-content">
+            <p className="eyebrow chapter-meta">Software developer</p>
+            <h1 className="display-primary">
+              <span className="line-mask"><span className="line-inner">Debashis</span></span>{' '}
+              <span className="line-mask"><span className="line-inner">Das<span className="accent">.</span></span></span>
+            </h1>
+            <p className="chapter-copy chapter-meta">{INTRO_COPY}</p>
+            <div className="chapter-actions chapter-meta">
+              <a className="primary-link" href="#work">Explore my work <ArrowUpRightIcon /></a>
             </div>
+          </div>
+          {!reducedMotion && (
+            <span className="scroll-cue chapter-meta" aria-hidden="true"><ArrowDownIcon /> Scroll to play</span>
+          )}
+        </section>
 
-            <div className="scroll-cue" aria-hidden="true">
-              <span className="scroll-cue-line" />
-              <span className="scroll-cue-text">SCROLL &darr;</span>
-            </div>
-          </section>
-
-          {/* CHAPTER 02 — EVOLUTION */}
+        {!reducedMotion && CHAPTERS.slice(1).map((chapter, index) => (
           <section
-            className="chapter-layer layer-ch2"
-            aria-label="Chapter 02: Evolution"
-            data-active={!isSilence && activeChapterId === 'chapter-evolution' ? 'true' : 'false'}
+            key={chapter.code}
+            className="chapter-layer layer-scene"
+            data-chapter={index + 1}
+            inert={current !== index + 1}
           >
-            <div className="ch2-block">
-              <span className="chapter-tag ch2-meta">02 / THE EVOLUTION</span>
+            <div className="chapter-content">
+              <p className="eyebrow chapter-meta">{chapter.eyebrow}</p>
               <h2 className="display-secondary">
-                <span className="line-mask">
-                  <span className="line-inner ch2-line">Evolution is</span>
-                </span>
-                <span className="line-mask">
-                  <span className="line-inner ch2-line">no longer</span>
-                </span>
-                <span className="line-mask">
-                  <span className="line-inner ch2-line">accidental.</span>
-                </span>
-              </h2>
-              <p className="editorial-body ch2-meta">
-                Organic intelligence.
-                <br />
-                Engineered beyond instinct.
-              </p>
-            </div>
-
-            <div className="annotation-layer" aria-hidden="true">
-              <div className="editorial-callout editorial-callout-top">
-                <span className="callout-node ch2-meta" />
-                <span className="callout-rule" />
-                <div className="callout-copy ch2-meta">
-                  <span>CORTICAL FLORA</span>
-                  <span className="callout-sub">SYMBIOTIC MATRIX</span>
-                </div>
-              </div>
-
-              <div className="editorial-callout editorial-callout-bottom">
-                <span className="callout-node ch2-meta" />
-                <span className="callout-rule" />
-                <div className="callout-copy ch2-meta">
-                  <span>NEURAL FILAMENT</span>
-                  <span className="callout-sub">AU-79 CONDUCTION</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* CHAPTER 03 — AWAKENING */}
-          <section
-            className="chapter-layer layer-ch3"
-            aria-label="Chapter 03: Awakening"
-            data-active={!isSilence && activeChapterId === 'chapter-awakening' ? 'true' : 'false'}
-          >
-            <div className="ch3-block">
-              <span className="chapter-tag chapter-tag-gold ch3-meta ch3-status">
-                <span className="status-dot-gold" aria-hidden="true" />
-                NEURAL STATE / ACTIVE
-              </span>
-              <h2 className="display-awakening">
-                <span className="line-mask">
-                  <span className="line-inner ch3-line">Consciousness,</span>
-                </span>
-                <span className="line-mask">
-                  <span className="line-inner ch3-line">redefined.</span>
-                </span>
-              </h2>
-              <p className="editorial-body ch3-meta ch3-body">
-                The future is not artificial. It is alive.
-              </p>
-            </div>
-          </section>
-
-          {/* CHAPTER 04 — PRECISION */}
-          <section
-            className="chapter-layer layer-ch4"
-            aria-label="Chapter 04: Precision"
-            data-active={!isSilence && activeChapterId === 'chapter-precision' ? 'true' : 'false'}
-          >
-            <div className="ch4-block">
-              <span className="chapter-tag ch4-meta">04 / THE ARCHITECTURE</span>
-              <h2 className="display-secondary">
-                <span className="line-mask">
-                  <span className="line-inner ch4-line">Precision</span>
-                </span>
-                <span className="line-mask">
-                  <span className="line-inner ch4-line">built into</span>
-                </span>
-                <span className="line-mask">
-                  <span className="line-inner ch4-line">every line.</span>
-                </span>
-              </h2>
-
-              <ul className="spec-list" aria-label="Architectural specifications">
-                {DESIGN_SPECS.map((spec, idx) => (
-                  <li key={spec.code} className="spec-row ch4-meta">
-                    {idx === 0 && <span className="spec-divider-top" aria-hidden="true" />}
-                    <span className="spec-index">{spec.code}</span>
-                    <span>{spec.label}</span>
-                    <span className="spec-divider" aria-hidden="true" />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          {/* CHAPTER 05 — TRANSCENDENCE */}
-          <section
-            className="chapter-layer layer-ch5"
-            aria-label="Chapter 05: Transcendence"
-            data-active={!isSilence && activeChapterId === 'chapter-transcendence' ? 'true' : 'false'}
-          >
-            <div className="ch5-block">
-              <span className="chapter-tag chapter-tag-gold ch5-meta">
-                05 / TRANSCENDENCE
-              </span>
-              <h2 className="display-primary">
-                <span className="line-mask">
-                  <span className="line-inner ch5-line">Beyond</span>
-                </span>
-                <span className="line-mask">
-                  <span className="line-inner ch5-line">human.</span>
-                </span>
-              </h2>
-              <p className="editorial-body ch5-meta">
-                The next evolution has already begun.
-              </p>
-              <div className="ch5-actions ch5-meta">
-                <button
-                  type="button"
-                  className="pill-cta pill-cta-awakened"
-                  onClick={(e) => onOpenOverlay(e.currentTarget)}
-                >
-                  <span className="pill-cta-label">ENTER THE NEXT ERA</span>
-                  <span className="pill-cta-glyph" aria-hidden="true">
-                    &rarr;
+                {chapter.lines.map((line, i) => (
+                  <span className="line-mask" key={line}>
+                    <span className="line-inner">{i > 0 && ' '}{line}</span>
                   </span>
-                </button>
-              </div>
-            </div>
-
-            <div className="ch5-signature ch5-meta">
-              <span className="ch5-signature-title">APEX PULSE</span>
-              <span className="ch5-signature-sub">
-                BIOLOGICAL INTELLIGENCE / CONCEPT 01
-              </span>
+                ))}
+              </h2>
+              <p className="chapter-copy chapter-meta">{chapter.description}</p>
+              <a className="primary-link chapter-meta" href={chapter.href}>
+                {chapter.linkLabel} <ArrowUpRightIcon />
+              </a>
             </div>
           </section>
-        </div>
+        ))}
+
+        {!reducedMotion && (
+          <nav className="chapter-rail" aria-label="Scroll film chapters">
+            {CHAPTERS.map((chapter, index) => (
+              <button
+                key={chapter.code}
+                type="button"
+                className="chapter-rail-item"
+                aria-current={current === index ? 'true' : undefined}
+                aria-label={`Chapter ${chapter.code}, ${chapter.label}`}
+                onClick={() => onJump(chapter.targetProgress)}
+              >
+                <span className="chapter-rail-code" aria-hidden="true">{chapter.code}</span>
+                <span className="chapter-rail-tick" aria-hidden="true" />
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
-    </main>
+    </div>
   );
 }

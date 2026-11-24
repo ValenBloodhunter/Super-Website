@@ -24,22 +24,6 @@ export interface CameraPose {
   warmth: number;
 }
 
-export interface ChapterDefinition {
-  id: string;
-  code: string;
-  label: string;
-  targetProgress: number;
-  isAwakened?: boolean;
-}
-
-export const CHAPTERS: ChapterDefinition[] = [
-  { id: 'chapter-sovereign', code: '01', label: 'SOVEREIGN', targetProgress: 0.04 },
-  { id: 'chapter-evolution', code: '02', label: 'EVOLUTION', targetProgress: 0.30 },
-  { id: 'chapter-awakening', code: '03', label: 'AWAKENING', targetProgress: 0.56, isAwakened: true },
-  { id: 'chapter-precision', code: '04', label: 'PRECISION', targetProgress: 0.75 },
-  { id: 'chapter-transcendence', code: '05', label: 'TRANSCENDENCE', targetProgress: 0.95, isAwakened: true },
-];
-
 /**
  * Keyframes synchronized directly to measured frame events in wan22_output_2K_upscaled.mp4:
  * - F00..F15: Side profile, eyes closed

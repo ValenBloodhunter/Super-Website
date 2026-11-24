@@ -3,8 +3,8 @@ import { LAST_FRAME_INDEX, TOTAL_FRAMES } from './cameraKeyframes';
 export type FrameVariant = 'desktop' | 'mobile';
 
 export interface FrameLoaderCallbacks {
-  onPriorityProgress: (ratio: number) => void;
-  onPriorityReady: () => void;
+  onPriorityProgress?: (ratio: number) => void;
+  onPriorityReady?: () => void;
   onFrameDecoded?: (index: number) => void;
   onFatalFallback?: () => void;
 }
@@ -36,7 +36,7 @@ export class ProgressiveFrameLoader {
 
   public getFrameUrl(index: number): string {
     const padded = String(index).padStart(3, '0');
-    return `/frames/${this.variant}/frame_${padded}.webp`;
+    return `${import.meta.env.BASE_URL}frames/${this.variant}/frame_${padded}.webp`;
   }
 
   public getVariant(): FrameVariant {
@@ -87,7 +87,7 @@ export class ProgressiveFrameLoader {
       this.decodeFrame(idx, idx === 0).then(() => {
         if (this.disposed) return;
         settled += 1;
-        this.callbacks.onPriorityProgress(settled / totalPriority);
+        this.callbacks.onPriorityProgress?.(settled / totalPriority);
       });
 
     // Prioritize frame 0 first, then parallel keyframe decode
@@ -96,7 +96,7 @@ export class ProgressiveFrameLoader {
         if (this.disposed) return;
         if (!this.loadedFlags[0]) {
           // Try static poster fallback
-          return this.decodeUrlIntoSlot(0, '/frames/poster.webp').catch(() => undefined);
+          return this.decodeUrlIntoSlot(0, `${import.meta.env.BASE_URL}frames/poster.webp`).catch(() => undefined);
         }
         return undefined;
       })
@@ -107,7 +107,7 @@ export class ProgressiveFrameLoader {
         if (!anyLoaded) {
           this.callbacks.onFatalFallback?.();
         }
-        this.callbacks.onPriorityReady();
+        this.callbacks.onPriorityReady?.();
         this.pendingQueue.push(...secondaryIndices);
         this.pumpQueue();
       });
