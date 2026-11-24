@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-void: #000000;
+  --color-canvas: #060808;
+  --color-surface: #0D1111;
+  --color-elevated: #141A1A;
+  --color-ivory: #F3EFE8;
+  --color-ash: #A6B0AC;
+  --color-slate-muted: #7C8883;
+  --color-amber-glow: #E8A656;
+  --color-emerald-glass: #2F8F86;
+  --color-emerald-deep: #103230;
+  --color-orchid-blush: #DFA1AE;
+}
+
+:root {
+  color-scheme: dark;
+  --bg-void: #000000;
+  --bg-canvas: #060808;
+  --bg-surface: #0D1111;
+  --bg-elevated: #141A1A;
+  --border-subtle: rgba(220, 232, 228, 0.11);
+  --border-strong: rgba(220, 232, 228, 0.24);
+  --border-amber: rgba(232, 166, 86, 0.42);
+  --text-primary: #F3EFE8;
+  --text-secondary: #A6B0AC;
+  --text-muted: #7C8883;
+  --accent-amber: #E8A656;
+  --accent-emerald: #2F8F86;
+  --accent-orchid: #DFA1AE;
+  --focus-ring: #E8A656;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+  }
+
+  body {
+    overflow-x: clip;
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+  }
+}
+
+/* Fluid editorial display scale */
+.text-hero-display {
+  font-family: var(--font-display);
+  font-size: clamp(2.85rem, 6.4vw, 5.85rem);
+  line-height: 0.96;
+  letter-spacing: -0.025em;
+  font-weight: 400;
+}
+
+.text-section-display {
+  font-family: var(--font-display);
+  font-size: clamp(2.15rem, 4.2vw, 3.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+}
+
+.text-card-display {
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 2.2vw, 2.15rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  font-weight: 500;
+}
+
+/* Scroll reveal utility (GPU-composited only) */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Native dialog backdrop & entrance */
+dialog.case-dialog {
+  background: transparent;
+  color: var(--text-primary);
+  max-width: min(94vw, 960px);
+  max-height: 90svh;
+  width: 100%;
+  margin: auto;
+  padding: 0;
+  border: none;
+  overflow: visible;
+}
+
+dialog.case-dialog::backdrop {
+  background: rgba(3, 5, 5, 0.84);
+  backdrop-filter: blur(8px);
+}
+
+dialog.case-dialog[open] .case-dialog-panel {
+  animation: dialogEnter 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes dialogEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Subtle mineral grain for hero & surface depth */
+.surface-hairline {
+  border: 1px solid var(--border-subtle);
+}
+
+.surface-hairline-hover {
+  border: 1px solid var(--border-subtle);
+  transition: border-color 180ms ease-out, background-color 180ms ease-out;
+}
+
+.surface-hairline-hover:hover {
+  border-color: var(--border-amber);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal,
+  .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  dialog.case-dialog[open] .case-dialog-panel {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
