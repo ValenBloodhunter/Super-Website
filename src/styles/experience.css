@@ -1,0 +1,928 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--bg-black);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  overflow-x: clip;
+  background-color: var(--bg-black);
+  color: var(--text-primary);
+}
+
+::selection {
+  background: rgba(229, 183, 91, 0.24);
+  color: var(--text-primary);
+}
+
+:focus-visible {
+  outline: 1.5px solid var(--luminous-gold);
+  outline-offset: 4px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Skip link for keyboard navigation */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 1.5rem;
+  z-index: 120;
+  padding: 0.65rem 1rem;
+  background: var(--text-primary);
+  color: var(--bg-black);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 999px;
+  transition: top 160ms var(--ease-cinematic);
+}
+
+.skip-link:focus {
+  top: 1.25rem;
+}
+
+/* Persistent cinema canvas & grain */
+.cinematic-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  z-index: 1;
+  pointer-events: none;
+  display: block;
+}
+
+.film-grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* Prologue loader */
+.prologue-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background-color: var(--bg-black);
+  transition: opacity 550ms var(--ease-cinematic), visibility 550ms var(--ease-cinematic);
+}
+
+.prologue-loader[data-ready="true"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.prologue-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: min(320px, 78vw);
+}
+
+.prologue-track {
+  width: 100%;
+  height: 1px;
+  background: rgba(242, 241, 236, 0.14);
+  overflow: hidden;
+}
+
+.prologue-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--text-primary);
+  transform-origin: left center;
+  transition: transform 140ms linear;
+}
+
+.prologue-meta {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Minimal fixed chrome */
+.nav-chrome {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: clamp(1rem, 2.2vw, 1.85rem) clamp(1.25rem, 3.6vw, 3.25rem);
+  pointer-events: none;
+}
+
+.nav-chrome > * {
+  pointer-events: auto;
+}
+
+.brand-anchor {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0;
+  cursor: pointer;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.brand-wordmark {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.nav-chapter-readout {
+  justify-self: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: color 300ms var(--ease-cinematic), opacity 300ms var(--ease-cinematic);
+}
+
+.nav-chapter-readout[data-gold="true"] {
+  color: var(--luminous-gold);
+}
+
+.pill-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(242, 241, 236, 0.9);
+  border-radius: 999px;
+  background-color: var(--text-primary);
+  color: var(--bg-black);
+  padding: 0.64rem 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    transform 260ms var(--ease-cinematic),
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease;
+}
+
+.pill-cta-nav {
+  justify-self: end;
+}
+
+.pill-cta-glyph {
+  display: inline-block;
+  transition: transform 260ms var(--ease-cinematic);
+}
+
+.pill-cta-label {
+  display: inline-block;
+  transition: transform 260ms var(--ease-cinematic);
+}
+
+.pill-cta:hover .pill-cta-label {
+  transform: translateX(2px);
+}
+
+.pill-cta:hover .pill-cta-glyph {
+  transform: translateX(4px);
+}
+
+.pill-cta:hover {
+  background-color: #ffffff;
+}
+
+.pill-cta-awakened {
+  border-color: rgba(229, 183, 91, 0.65);
+}
+
+/* Right-edge minimalist chapter rail */
+.chapter-rail {
+  position: fixed;
+  right: clamp(1rem, 2.8vw, 2.5rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1.05rem;
+}
+
+.chapter-rail-item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: transparent;
+  border: none;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
+
+.chapter-rail-code {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--text-secondary);
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity 220ms var(--ease-cinematic), transform 220ms var(--ease-cinematic), color 220ms ease;
+}
+
+.chapter-rail-item:hover .chapter-rail-code,
+.chapter-rail-item:focus-visible .chapter-rail-code,
+.chapter-rail-item[aria-current="true"] .chapter-rail-code {
+  opacity: 0.92;
+  transform: translateX(0);
+}
+
+.chapter-rail-item[aria-current="true"] .chapter-rail-code {
+  color: var(--text-primary);
+}
+
+.chapter-rail-tick {
+  width: 14px;
+  height: 1px;
+  background: rgba(242, 241, 236, 0.28);
+  transition: width 280ms var(--ease-cinematic), background-color 280ms ease;
+}
+
+.chapter-rail-item[aria-current="true"] .chapter-rail-tick {
+  width: 28px;
+  background: var(--text-primary);
+}
+
+.chapter-rail-item[data-gold="true"][aria-current="true"] .chapter-rail-tick {
+  background: var(--luminous-gold);
+}
+
+.chapter-rail-item[data-gold="true"][aria-current="true"] .chapter-rail-code {
+  color: var(--luminous-gold);
+}
+
+/* Scroll stage & sticky editorial frame */
+.scroll-story-track {
+  position: relative;
+  z-index: 10;
+  height: 600vh;
+}
+
+.pinned-narrative-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  width: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Subtle feathered legibility scrims (never boxed cards) */
+.scrim-left {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(3, 5, 4, 0.82) 0%,
+    rgba(3, 5, 4, 0.56) 28%,
+    rgba(3, 5, 4, 0.16) 52%,
+    rgba(3, 5, 4, 0) 72%
+  );
+  pointer-events: none;
+}
+
+.scrim-bottom {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    0deg,
+    rgba(3, 5, 4, 0.88) 0%,
+    rgba(3, 5, 4, 0.45) 26%,
+    rgba(3, 5, 4, 0) 54%
+  );
+  pointer-events: none;
+}
+
+.scrim-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: clamp(88px, 14vh, 132px);
+  background: linear-gradient(
+    180deg,
+    rgba(3, 5, 4, 0.78) 0%,
+    rgba(3, 5, 4, 0.36) 55%,
+    rgba(3, 5, 4, 0) 100%
+  );
+  pointer-events: none;
+}
+
+/* Chapter layers */
+.chapter-layer {
+  position: absolute;
+  inset: 0;
+  padding: clamp(4.75rem, 8vh, 6.5rem) clamp(1.25rem, 4.2vw, 4.25rem) clamp(2rem, 5vh, 3.75rem);
+  display: grid;
+  pointer-events: none;
+}
+
+.chapter-layer[data-active="true"] {
+  pointer-events: auto;
+}
+
+/* Typography roles */
+.chapter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-size: clamp(9.5px, 0.72vw, 11.5px);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.chapter-tag-gold {
+  color: var(--luminous-gold);
+}
+
+.display-primary {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(56px, 8vw, 144px);
+  font-weight: 500;
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+  color: var(--text-primary);
+}
+
+.display-secondary {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 5vw, 88px);
+  font-weight: 500;
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+  color: var(--text-primary);
+}
+
+.display-awakening {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(42px, 5.7vw, 104px);
+  font-weight: 500;
+  line-height: 0.94;
+  letter-spacing: -0.055em;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.editorial-body {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(14px, 1.05vw, 17px);
+  font-weight: 400;
+  line-height: 1.52;
+  letter-spacing: -0.01em;
+  color: rgba(242, 241, 236, 0.72);
+  max-width: 34ch;
+}
+
+/* Line-by-line clipping masks with descender clearance */
+.line-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.line-inner {
+  display: block;
+  will-change: transform, opacity;
+}
+
+/* Chapter 01 — Sovereign */
+.ch1-block {
+  align-self: end;
+  justify-self: start;
+  max-width: min(62vw, 880px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.85rem, 1.5vh, 1.35rem);
+  padding-bottom: clamp(4.2rem, 8.2vh, 5.75rem);
+}
+
+.scroll-cue {
+  position: absolute;
+  left: clamp(1.25rem, 4.2vw, 4.25rem);
+  bottom: clamp(1.35rem, 3.4vh, 2.5rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.scroll-cue-line {
+  width: 1px;
+  height: 36px;
+  background: linear-gradient(180deg, rgba(242, 241, 236, 0.15) 0%, rgba(242, 241, 236, 0.85) 100%);
+  transform-origin: top center;
+}
+
+.scroll-cue-text {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Chapter 02 — Evolution */
+.ch2-block {
+  align-self: center;
+  justify-self: start;
+  max-width: min(44vw, 600px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.9rem, 1.6vh, 1.4rem);
+}
+
+.annotation-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.editorial-callout {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.editorial-callout-top {
+  top: 23%;
+  right: 11%;
+}
+
+.editorial-callout-bottom {
+  bottom: 20%;
+  right: 13%;
+}
+
+.callout-rule {
+  width: clamp(46px, 5vw, 84px);
+  height: 1px;
+  background: rgba(242, 241, 236, 0.42);
+  transform-origin: left center;
+}
+
+.callout-node {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(242, 241, 236, 0.8);
+  background: var(--bg-black);
+}
+
+.callout-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(242, 241, 236, 0.72);
+}
+
+.callout-sub {
+  color: var(--text-secondary);
+  font-size: 9px;
+}
+
+/* Chapter 03 — Awakening */
+.ch3-block {
+  align-self: center;
+  justify-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.9rem, 1.6vh, 1.45rem);
+}
+
+.status-dot-gold {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--luminous-gold);
+  box-shadow: 0 0 12px rgba(229, 183, 91, 0.65);
+}
+
+/* Chapter 04 — Precision */
+.ch4-block {
+  align-self: center;
+  justify-self: start;
+  max-width: min(42vw, 560px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.1rem, 2vh, 1.75rem);
+}
+
+.spec-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.spec-row {
+  position: relative;
+  padding: 0.85rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.spec-divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--rule-hairline);
+  transform-origin: left center;
+}
+
+.spec-row:first-child .spec-divider-top {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--rule-hairline);
+  transform-origin: left center;
+}
+
+.spec-index {
+  color: var(--text-secondary);
+}
+
+/* Chapter 05 — Transcendence */
+.ch5-block {
+  align-self: end;
+  justify-self: start;
+  max-width: min(46vw, 620px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 1.8vh, 1.5rem);
+  padding-bottom: clamp(0.5rem, 2vh, 1.5rem);
+}
+
+.ch5-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.35rem;
+}
+
+.ch5-signature {
+  position: absolute;
+  right: clamp(1.25rem, 4.2vw, 4.25rem);
+  bottom: clamp(1.6rem, 4vh, 2.75rem);
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ch5-signature-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.ch5-signature-sub {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Genesis Initiation Overlay (<dialog>) */
+dialog.genesis-dialog {
+  width: min(92vw, 880px);
+  max-height: 88svh;
+  margin: auto;
+  padding: 0;
+  border: 1px solid rgba(242, 241, 236, 0.16);
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+  overflow-y: auto;
+}
+
+dialog.genesis-dialog::backdrop {
+  background: rgba(3, 5, 4, 0.84);
+  backdrop-filter: blur(10px);
+}
+
+.genesis-shell {
+  padding: clamp(1.5rem, 3.5vw, 3rem);
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(1.75rem, 3.5vw, 3.25rem);
+}
+
+.genesis-header {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--rule-hairline);
+}
+
+.genesis-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--rule-hairline);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.genesis-close:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.genesis-monograph {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.genesis-pillars {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rule-hairline);
+}
+
+.genesis-pillar {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--rule-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.genesis-pillar-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--luminous-gold);
+}
+
+.genesis-pillar-text {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.genesis-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.genesis-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.genesis-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.genesis-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(242, 241, 236, 0.24);
+  padding: 0.65rem 0;
+  font-size: 15px;
+  color: var(--text-primary);
+  border-radius: 0;
+  transition: border-color 180ms ease;
+}
+
+.genesis-input:focus {
+  outline: none;
+  border-bottom-color: var(--luminous-gold);
+}
+
+.genesis-select {
+  background-color: #070a09;
+}
+
+.genesis-error {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--floral-pink);
+}
+
+/* Tablet & Mobile Portrait Deliberate Composition */
+@media (max-width: 899px) {
+  .nav-chrome {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .nav-chapter-readout {
+    display: none;
+  }
+
+  .display-awakening {
+    font-size: clamp(38px, 6vw, 62px);
+  }
+
+  .chapter-rail {
+    right: 0.85rem;
+    gap: 0.85rem;
+  }
+
+  .chapter-rail-code {
+    display: none;
+  }
+
+  .annotation-layer {
+    display: none;
+  }
+
+  .genesis-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .scroll-story-track {
+    height: 520vh;
+  }
+
+  .scrim-left {
+    background: linear-gradient(
+      0deg,
+      rgba(3, 5, 4, 0.94) 0%,
+      rgba(3, 5, 4, 0.78) 38%,
+      rgba(3, 5, 4, 0.18) 62%,
+      rgba(3, 5, 4, 0) 80%
+    );
+  }
+
+  .display-primary {
+    font-size: clamp(38px, 10.2vw, 56px);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+  }
+
+  .display-secondary {
+    font-size: clamp(30px, 8.6vw, 48px);
+    line-height: 0.98;
+    letter-spacing: -0.04em;
+  }
+
+  .display-awakening {
+    font-size: clamp(36px, 9.8vw, 52px);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+    white-space: normal;
+  }
+
+  .chapter-layer {
+    padding: 4.5rem 1.25rem 3.5rem;
+  }
+
+  /* Position all mobile text cleanly in the lower frame below her face & eyes */
+  .ch1-block,
+  .ch2-block,
+  .ch3-block,
+  .ch4-block,
+  .ch5-block {
+    align-self: end;
+    justify-self: start;
+    max-width: 100%;
+    padding-right: 1.5rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .ch5-block {
+    padding-bottom: 3.1rem;
+  }
+
+  .ch5-signature {
+    left: 1.25rem;
+    right: auto;
+    bottom: 1.15rem;
+    text-align: left;
+  }
+
+  .scroll-cue {
+    display: none;
+  }
+
+  .pill-cta-nav {
+    padding: 0.55rem 0.95rem;
+    font-size: 9.5px;
+    letter-spacing: 0.13em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prologue-loader,
+  .pill-cta,
+  .pill-cta-label,
+  .pill-cta-glyph,
+  .chapter-rail-tick {
+    transition: none !important;
+  }
+}

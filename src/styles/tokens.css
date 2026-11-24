@@ -1,0 +1,25 @@
+:root {
+  color-scheme: dark;
+
+  /* Core chromatic tokens derived from source footage */
+  --bg-black: #030504;
+  --text-primary: #F2F1EC;
+  --text-secondary: #9EA5A0;
+  --emerald-deep: #103C35;
+  --botanical-teal: #276F65;
+  --floral-pink: #D19AAE;
+  --luminous-gold: #E5B75B;
+
+  /* Structural hairlines & subtle surfaces */
+  --rule-hairline: rgba(242, 241, 236, 0.14);
+  --rule-emerald: rgba(39, 111, 101, 0.36);
+  --rule-gold: rgba(229, 183, 91, 0.55);
+  --surface-overlay: rgba(5, 8, 7, 0.94);
+
+  /* Typography stacks */
+  --font-display: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Motion timings */
+  --ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1);
+}
